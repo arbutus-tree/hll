@@ -148,6 +148,9 @@ def main():
         print(f"\n[{name}] states={len(sub)}  distinct views={len(groups)}  "
               f"uniquely-identified states={unique} ({unique / len(sub):.2%})")
         print("  states per view -> number of views:", dict(sorted(sizes.items())))
+        # Back edges both showing the top colour: only permutation parity tells them apart.
+        need_parity = sum(1 for s in sub if s[3][2] == 0 and s[3][3] == 0)
+        print(f"  states needing parity (UL and UB both show U on top): {need_parity}")
 
 
 if __name__ == "__main__":

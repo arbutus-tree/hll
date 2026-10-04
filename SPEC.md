@@ -104,9 +104,6 @@ D, B and L take the opposite colours of U, F and R.
 | **total configurations** | **1,492,896** |
 | PLL subset (`co`, `eo` all zero, non-trivial) | 284 × 24 = 6,816 |
 
-The space has about 1.5 million configurations, not 14 million. There are only
-6 × 4 = 24 ways to choose the top and front colours, so the colour factor is 24.
-
 ## 6. Representations
 
 ### Canonical letter string
@@ -144,8 +141,8 @@ The view shows 14 of the 20 non-centre LL stickers:
 - **Hidden:** L1–L3, B1–B3 (6)
 - The lower two rows of F and R are visible but always solved, so they carry no information.
 
-**Every one of the 62,204 states produces a distinct view.** This is checked by
-exhaustive enumeration, not just argued. Here is why it holds:
+**Every one of the 62,204 states produces a distinct view** (verified by exhaustive
+enumeration). The visible stickers determine the hidden ones as follows:
 
 1. **Front corners (URF, UFL, UBR):** each shows at least two stickers, so the
    piece and its twist can be read directly.
@@ -160,8 +157,8 @@ Case 4's double-top-colour situation is the hard part of recognition. It applies
 **15,548 states (25%)**, and to **all 284 PLL states**. In PLL, both back edges
 always show the top colour.
 
-Recognition therefore never needs a second image. The answer is always determined;
-the difficulty is in the inference.
+A single U/F/R view is therefore always sufficient input; no instance in this
+space is ambiguous.
 
 ## 8. Properties the rest of the eval can rely on
 
@@ -183,3 +180,6 @@ the difficulty is in the inference.
 - Solution grammar: wide moves, slice moves, rotations, and whether a trailing AUF is required.
 - Sampling strategy and subsets beyond PLL.
 - A move simulator for grading. The facelet conventions here are what it must match.
+  Its first test should apply known LL algorithms to a solved cube and check that
+  the results land in this space with the expected facelet strings; the facelet
+  layout in §3 has not yet been checked against a move simulator.
