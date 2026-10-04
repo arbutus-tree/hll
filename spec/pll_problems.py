@@ -50,8 +50,7 @@ where the top face (U), the front face (F, the left side of your view) and the r
 (R, the right side of your view) meet.
 
 Sticker colours: w=white, y=yellow, g=green, b=blue, r=red, o=orange. \
-Opposite colours are white-yellow, green-blue and red-orange. \
-This is a normal (non-mirrored) cube.
+This is a standard cube.
 
 U face, viewed from above, back edge at the top:
 {U}
@@ -62,8 +61,7 @@ F face, viewed head-on, top edge at the top:
 R face, viewed head-on, top edge at the top:
 {R}
 
-The remaining faces (D, L, B) are hidden. D, L and B are the colours opposite to U, R and F \
-respectively.
+The remaining faces (D, L, B) are hidden.
 
 Give a sequence of moves that solves the cube, so that every face is a single colour \
 again with the cube still in the orientation shown (no whole-cube rotations).
@@ -72,7 +70,7 @@ Moves: U, D, L, R, F, B turn that face 90 degrees clockwise as seen looking dire
 that face. A trailing ' means counterclockwise and a trailing 2 means a half turn, \
 e.g. R, R', R2. Use only these 18 moves. Faces are named as in the picture above: \
 U is the top, F the face on the left, R the face on the right, D the bottom, \
-L the hidden face opposite R, B the hidden face opposite F.
+L the hidden left face, B the hidden back face.
 
 Write the moves separated by spaces inside <solution></solution> tags.
 """

@@ -34,9 +34,9 @@ A fixed text prompt (`PROMPT` in the script) with three 3×3 grids filled in. Ev
   can't be mistaken for the move `B`.
 - Grids are in the facelet order of SPEC.md §3 (row-major from the top-left of each view), so the
   F and R grids include the two solved lower rows. These show the F and R centre colours.
-- The prompt states the opposite-colour pairs and that D, L, B are opposite U, R, F, so the model can
-  infer the hidden faces. It also states the move notation, the 18-move set, that rotations are
-  not allowed, and the answer format.
+- The prompt does not state which colours are opposite each other. Knowing how a standard cube is
+  coloured (and so what the hidden faces are) is part of the task. It does state the move notation,
+  the 18-move set, that rotations are not allowed, and the answer format.
 
 By SPEC.md §7 the visible stickers determine the whole state, so every prompt has exactly one answer state.
 
