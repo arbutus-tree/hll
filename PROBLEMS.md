@@ -1,10 +1,10 @@
 # PLL problem pool and I/O format
 
 The concrete problem set for the simple last-layer eval. It sits on top of the configuration space in
-[SPEC.md](SPEC.md) (frame, facelet layout, orientations). `spec/pll_problems.py` is the reference
-implementation: `python3 spec/pll_problems.py` prints a sample prompt and runs the self-checks below.
+[SPEC.md](SPEC.md) (frame, facelet layout, orientations). Code: `src/hll/pll.py` (pool, cases, prompt),
+`src/hll/moves.py` (notation, simulator), `src/hll/grading.py`. Checked by `pytest`.
 
-Sampling, scoring aggregation and run structure are deliberately **not** specified here.
+Sampling is in §5. Run structure (epochs, models) is left to Inspect.
 
 ## 1. Problem pool
 
@@ -21,58 +21,77 @@ A problem is one (PLL state, colour orientation) pair:
 id of SPEC.md §6. Colour only affects what the model sees (SPEC.md §8), so there are 284 distinct
 answers' worth of states, each shown in 24 colourings.
 
-`python3 spec/pll_problems.py export` writes the pool as JSONL (`id`, `config_id`, `orientation`, `colours`, `input`).
+### Case labels
+
+Every state is `pre-AUF · case · post-AUF` for one of the **21 PLL cases** (`ALGS` in `pll.py`, one textbook alg
+per case, written the way they usually appear, with slices, rotations and D/L turns). Each state is labelled with the
+decomposition that uses the fewest AUF turns (ties broken by `(case, pre, post)`); symmetric cases (H, Na, Nb: 4 states,
+E, Z: 8, all others 16) have several. Labels are metadata for analysis. They are not shown to the model and do not affect grading.
+
+> The case *names* of the algs were written from memory and could not be cross-checked against a published list in the
+> authoring environment. The tests prove each alg is a valid PLL, that the 21 are distinct and that together they cover all 284 states,
+> and the symmetry counts match theory, but not that, say, `Gb` is what the community calls Gb. Check `ALGS` against a reference
+> before reporting per-case results by name.
 
 ## 2. Input
 
-A fixed text prompt (`PROMPT` in the script) with three 3×3 grids filled in. Everything the model needs is in it.
+A fixed text prompt (`HEADER` + notation + `_FOOTER` in `pll.py`) with three 3×3 grids filled in.
 
 - **U**: the top face, viewed from above with the back edge at the top, rows top to bottom.
 - **F**: the left visible side, viewed head-on.
 - **R**: the right visible side, viewed head-on.
 - Stickers are lowercase colour letters `w y g b r o`, space-separated. Lowercase is used so a blue sticker `b`
   can't be mistaken for the move `B`.
-- Grids are in the facelet order of SPEC.md §3 (row-major from the top-left of each view), so the
-  F and R grids include the two solved lower rows. These show the F and R centre colours.
+- Grids are in the facelet order of SPEC.md §3, so the F and R grids include the two solved lower rows.
 - The prompt does not state which colours are opposite each other. Knowing how a standard cube is
-  coloured (and so what the hidden faces are) is part of the task. It does state the move notation,
-  the 18-move set, that rotations are not allowed, and the answer format.
+  coloured (and so what the hidden faces are) is part of the task. It does state the notation and the answer format.
 
 By SPEC.md §7 the visible stickers determine the whole state, so every prompt has exactly one answer state.
+
+The input is produced by `render_input`. Later modalities (images, other layouts) replace this function; nothing downstream depends on the text.
 
 ## 3. Output
 
 The response may contain anything (reasoning etc.). The answer is the contents of the **last**
-`<solution>...</solution>` tag, as a whitespace-separated move list.
+`<solution>...</solution>` tag, as a whitespace-separated move list. No parentheses, no commas.
 
-### Notation and allowed moves
+### Notation (`pll` move set, the default)
 
-WCA outer-face turns in the camera frame of SPEC.md §2 (U top, **F = left visible face**, **R = right
-visible face**), `X`, `X'`, `X2` for X in `U R F D L B`: **18 moves**. The set is the constant
-`MOVESET` and is a parameter of `parse_moves` and `grade`, so it can be narrowed later (e.g. to ⟨U, R⟩).
-Not allowed: wide moves (`Rw`, `r`), slice moves (`M E S`), whole-cube rotations (`x y z`), `2'`, `U2'`,
-lowercase letters, and anything else.
+54 moves, covering everything in typical PLL algorithms. Each takes `'` or `2`; `2'` is accepted as a spelling of `2`.
 
-Face-turn moves never move centres, so "solved" can't be satisfied by a rotation in disguise.
+| kind | moves | meaning |
+|---|---|---|
+| face turns | `U R F D L B` | 90° clockwise looking at that face |
+| wide turns | `Rw` or `r`, likewise `Lw/l Uw/u Dw/d Fw/f Bw/b` | the face plus the middle layer, same direction as the face |
+| slices | `M E S` | middle layers; `M` follows `L`, `E` follows `D`, `S` follows `F` |
+| rotations | `x y z` | whole cube, following `R`, `U`, `F` |
+
+Face names are **positions**: after a rotation, `R` is whichever face is now on the right (the standard convention; `y R ≡ B y`).
+
+The `face` move set (the 18 face turns) is kept as a parameter for ablations.
 
 ### Grading
 
 Each response gets a binary result from `grade(pid, response, moveset)`:
 
-1. No `<solution>` tag, an empty sequence, or any token that isn't exactly one allowed move: **fail**.
-2. Otherwise apply the moves to the problem's 54-facelet state. Solved means the result equals the canonical
-   solved string (`UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB`): **pass**, else **fail**.
+1. No `<solution>` tag, an empty sequence, or any token that isn't one allowed move: **fail**, with a machine-readable reason
+   (`no_solution_tag`, `empty`, `invalid_move`).
+2. Otherwise apply the moves to the problem's 54-facelet state. **Solved means every face is a single colour**, in any final
+   whole-cube orientation: **pass**; else `not_solved`.
 
-There is no length cap and no optimality requirement in the grade, and no partial credit. `grade` also returns
-the move count so that length can be analysed later.
+There is no length cap and no optimality requirement, and no partial credit. `grade` returns the move count so that length
+can be analysed later (a long non-algorithmic solution and a recalled textbook alg both pass; their lengths differ).
 
-## 4. Verification
+## 4. Verification (`tests/`)
 
-`selftest()` in the script checks, and the numbers above come from it:
+- Turn directions, inverses and orders of the simulator; the identities `x = R M' L'`, `Rw = R M'`, `y R = B y`, etc., which pin down the slice and rotation conventions.
+- Every one of the 21 algs stays inside the PLL set under all 16 AUF pairs (catches typos); cases cover all 284 states with the expected symmetry counts.
+- Every one of the 6,816 problems is solved by its reference solution (case alg with AUFs, closed with a rotation where the alg ends rotated).
+- Grader: rotated endings, alternate spellings, each failure reason, last-tag-wins, move set restrictions.
+- Dataset and an Inspect run with a scripted solver, end to end through the scorer and its metrics.
 
-- Turn directions and inverses of the facelet-level move simulator.
-- All 6,816 problems are solvable and the grader accepts a known solution for each. The solutions are the inverse
-  of a word in `U` and four PLL algorithms (T, Ua, Aa, Y) that reaches that state from solved.
-- This also confirms that the facelet layout in SPEC.md §3 matches a real move simulator (the open item in
-  SPEC.md §9).
-- Rejection of untagged, empty, rotation, and malformed answers.
+## 5. Sampling
+
+The default task uses the 284 states **once each**, with colour orientations assigned by a seeded shuffle so that every orientation appears 11 or 12 times (`orientations="balanced"`). `orientations="all"` gives all 6,816;
+an integer fixes one orientation. Sample ids are `problem_id`, so a sample is the same problem under every variant.
+Standard errors are clustered by state, because the colourings of one state are not independent.

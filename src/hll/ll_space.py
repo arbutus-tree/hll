@@ -1,6 +1,6 @@
 """Reference enumeration of the last-layer (LL) image configuration space.
 
-See SPEC.md. Run `python3 spec/ll_space.py` to reproduce every count in the spec.
+See SPEC.md. Run `python3 -m hll.ll_space` to reproduce every count in the spec.
 """
 from collections import Counter
 from itertools import permutations, product

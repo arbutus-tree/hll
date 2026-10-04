@@ -2,8 +2,8 @@
 
 This spec defines the set of cube configurations the eval draws from, and the
 canonical representation everything else (rendering, prompts, grading) should
-agree on. `spec/ll_space.py` is the reference implementation; every number below
-can be reproduced by running `python3 spec/ll_space.py`.
+agree on. `src/hll/ll_space.py` is the reference implementation; every number below
+can be reproduced by running `PYTHONPATH=src python3 -m hll.ll_space`.
 
 ## 1. What a configuration is
 
@@ -166,9 +166,8 @@ space is ambiguous.
   sequence solves `(orientation, state)` exactly when it solves `(orientation', state)`.
   Grading only needs the 62,204 canonical states. Colour orientation affects only
   perception.
-- **Solved means fully solved.** After the moves, every face is a single colour. The
-  default assumes no whole-cube rotations, so the cube stays in the camera frame.
-  Whether rotations are allowed is a solution-format decision (§9).
+- **Solved means fully solved.** After the moves, every face is a single colour. Whether the cube
+  may end in a different whole-cube orientation is a solution-format decision (§9; PROBLEMS.md allows it).
 - **No symmetry reduction.** States related by a `y` conjugation or by a mirror are
   kept as distinct configurations, because they need different answers (different
   AUFs, mirrored algs). Grouping by case (OLL, PLL or ZBLL name) is metadata on top
@@ -180,5 +179,5 @@ space is ambiguous.
 - Solution grammar: wide moves, slice moves, rotations, and whether a trailing AUF is required.
 - Sampling strategy and subsets beyond PLL.
 - The problem set built on this space is in [PROBLEMS.md](PROBLEMS.md), with a move
-  simulator (`spec/pll_problems.py`). Its self-test applies known LL algorithms to a solved cube
-  and confirms every PLL state is reached with the facelet strings of §3, so the layout is checked.
+  simulator (`src/hll/moves.py`). Its tests apply the 21 PLL algorithms to a solved cube
+  and confirm every PLL state is reached with the facelet strings of §3, so the layout is checked.
