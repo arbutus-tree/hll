@@ -35,7 +35,7 @@ def test_cases_cover_pool_with_expected_symmetry_counts():
 
 def test_reference_solution_solves_everything_and_rotations_are_exercised():
     uses_rotation = uses_slice = 0
-    for pid in range(pll.N_PROBLEMS):
+    for pid in range(pll.N_PLL):      # orientation 0; the answer does not depend on colour (SPEC.md section 8)
         o, s = pll.from_problem_id(pid)
         ref = pll.reference_solution(s)
         assert pll.check_solved(pid, ref), (pid, ref)

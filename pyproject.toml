@@ -3,10 +3,10 @@ name = "hll"
 version = "0.1.0"
 description = "Last-layer (PLL) recognition-and-recall eval for Inspect AI"
 requires-python = ">=3.10"
-dependencies = ["inspect_ai"]
+dependencies = ["inspect_ai", "magiccube>=1.2,<2"]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "kociemba"]
 
 [project.entry-points.inspect_ai]
 hll = "hll._registry"

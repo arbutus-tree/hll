@@ -23,8 +23,8 @@ Data is generated deterministically at load time from this repo, so there is not
 ## Layout
 
 ```
-src/hll/ll_space.py   configuration space (SPEC.md)           } no third-party dependencies
-src/hll/moves.py      notation, parser, facelet simulator      }
+src/hll/ll_space.py   configuration space (SPEC.md)           } no inspect_ai needed
+src/hll/moves.py      notation policy and parser; simulation via magiccube }
 src/hll/pll.py        pool, 21 PLL algs/cases, prompt          }
 src/hll/grading.py    answer extraction and grading            }
 src/hll/dataset.py    Inspect samples (ids, metadata, target)

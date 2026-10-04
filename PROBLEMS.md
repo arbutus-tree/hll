@@ -84,9 +84,12 @@ can be analysed later (a long non-algorithmic solution and a recalled textbook a
 
 ## 4. Verification (`tests/`)
 
-- Turn directions, inverses and orders of the simulator; the identities `x = R M' L'`, `Rw = R M'`, `y R = B y`, etc., which pin down the slice and rotation conventions.
+- Simulation is delegated to [`magiccube`](https://github.com/trincaog/magiccube) (BSD-3) behind the adaptor in `moves.py`. Before adopting it, it was fuzzed against an independent
+  hand-written simulator: identical on all 54 moves and 3,000 random sequences of up to 40 moves. That simulator's outputs live on as golden vectors in `tests/test_references.py`.
+  `kociemba` (an unrelated solver) accepts all 284 states as valid cubes, and its solutions solve them under the adaptor, which checks the SPEC.md §3 facelet layout.
+- Turn directions, inverses and orders; the identities `x = R M' L'`, `Rw = R M'`, `y R = B y`, etc., which pin down the slice and rotation conventions.
 - Every one of the 21 algs stays inside the PLL set under all 16 AUF pairs (catches typos); cases cover all 284 states with the expected symmetry counts.
-- Every one of the 6,816 problems is solved by its reference solution (case alg with AUFs, closed with a rotation where the alg ends rotated).
+- Every one of the 284 states is solved by its reference solution (colour does not affect the answer) (case alg with AUFs, closed with a rotation where the alg ends rotated).
 - Grader: rotated endings, alternate spellings, each failure reason, last-tag-wins, move set restrictions.
 - Dataset and an Inspect run with a scripted solver, end to end through the scorer and its metrics.
 

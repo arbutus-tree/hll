@@ -1,32 +1,20 @@
-"""Move notation and a facelet-level cube simulator, in the camera frame of SPEC.md.
+"""Move notation policy, plus a thin adaptor over `magiccube` for the actual cube simulation.
 
-Every move is a rotation of the stickers lying in some set of layers about a fixed axis, so face turns,
-wide turns, slices and whole-cube rotations all come from one table. Moves always act on *positions in
-space* (R is whichever face is currently on the viewer's right), which is the standard convention.
-After `y`, for example, `R` turns the face that used to be at the back.
+What we own here: which spellings are accepted (`canonical`), which moves are allowed in a given eval
+(`MOVESETS`), parsing a model's answer (`parse_moves`), and converting between our 54-letter Kociemba
+facelet strings (SPEC.md) and the library's cube. What the library owns: turning moves into a new cube
+state. Moves act on positions in space (R is whichever face is on the viewer's right), the standard
+convention; after `y`, `R` turns the face that used to be at the back.
 """
 import re
+
+from magiccube import Cube
 
 from . import ll_space as ll
 
 # ---------------------------------------------------------------------------
 # Notation
 # ---------------------------------------------------------------------------
-
-AXIS = {"U": (0, 1, 0), "R": (1, 0, 0), "F": (0, 0, 1), "D": (0, -1, 0), "L": (-1, 0, 0), "B": (0, 0, -1)}
-
-# canonical base move -> (named face whose direction it follows, layers counted from that face's outer
-# layer: 1 = outer, 0 = middle, -1 = far side).
-_BASE = {}
-for _f in "URFDLB":
-    _BASE[_f] = (_f, (1,))                  # face turn
-    _BASE[_f + "w"] = (_f, (1, 0))          # wide turn: outer + middle layer
-_BASE["M"] = ("L", (0,))                    # slices follow L, D, F respectively
-_BASE["E"] = ("D", (0,))
-_BASE["S"] = ("F", (0,))
-_BASE["x"] = ("R", (1, 0, -1))              # rotations follow R, U, F
-_BASE["y"] = ("U", (1, 0, -1))
-_BASE["z"] = ("F", (1, 0, -1))
 
 FACE_TURNS = tuple(f for f in "URFDLB")
 WIDE_TURNS = tuple(f + "w" for f in "URFDLB")
@@ -100,51 +88,25 @@ def invert(moves):
 
 
 # ---------------------------------------------------------------------------
-# Simulator on the 54-facelet string (Kociemba order, camera frame)
+# Simulation (delegated to magiccube)
 # ---------------------------------------------------------------------------
 
-def _sticker_pos(face, n):
-    """Cubie coordinates (x right, y up, z front) of facelet n (1..9), per SPEC.md §3 layout."""
-    r, c = divmod(n - 1, 3)
-    return {"U": (c - 1, 1, r - 1), "R": (1, 1 - r, 1 - c), "F": (c - 1, 1 - r, 1),
-            "D": (c - 1, -1, 1 - r), "L": (-1, 1 - r, c - 1), "B": (1 - c, 1 - r, -1)}[face]
+# magiccube works in colours with its default scheme (white up, green front, red right, yellow down,
+# orange left, blue back) and takes faces in U L F R B D order. Our letters are Kociemba order U R F D L B.
+_LETTER_TO_COLOUR = {"U": "W", "R": "R", "F": "G", "D": "Y", "L": "O", "B": "B"}
 
 
-def _rot_cw(v, axis):
-    """Rotate v by -90 degrees about axis (clockwise when seen from outside along axis)."""
-    cx = ll.cross(axis, v)
-    d = sum(a * b for a, b in zip(axis, v))
-    return tuple(-cx[i] + axis[i] * d for i in range(3))
-
-
-def _build_quarter_turns():
-    pts = [(_sticker_pos(f, n), AXIS[f]) for f in ll.FACES for n in range(1, 10)]
-    where = {pt: i for i, pt in enumerate(pts)}
-    perms = {}
-    for name, (face, layers) in _BASE.items():
-        axis = AXIS[face]
-        perm = list(range(54))                 # perm[i] = facelet that sticker i moves to
-        for i, (p, nrm) in enumerate(pts):
-            if sum(a * b for a, b in zip(p, axis)) in layers:
-                perm[i] = where[(_rot_cw(p, axis), _rot_cw(nrm, axis))]
-        perms[name] = perm
-    return perms
-
-
-_QUARTER = _build_quarter_turns()
+def _to_cube(facelets):
+    faces = {f: facelets[9 * i:9 * i + 9] for i, f in enumerate(ll.FACES)}
+    return Cube(3, "".join(_LETTER_TO_COLOUR[ch] for f in "ULFRBD" for ch in faces[f]))
 
 
 def apply_moves(facelets, moves):
-    f = list(facelets)
-    for m in moves:
-        base = m.rstrip("'2")
-        perm = _QUARTER[base]
-        for _ in range(_QUARTERS[m[len(base):] or None]):
-            g = f[:]
-            for i, j in enumerate(perm):
-                g[j] = f[i]
-            f = g
-    return "".join(f)
+    """Apply canonical moves to a 54-letter facelet string; returns the new string."""
+    cube = _to_cube(facelets)
+    if moves:
+        cube.rotate(" ".join(moves))
+    return cube.get_kociemba_facelet_positions()
 
 
 def is_solved(facelets):
