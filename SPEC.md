@@ -179,7 +179,6 @@ space is ambiguous.
 - Rendering: camera angle, lighting, synthetic vs. photo.
 - Solution grammar: wide moves, slice moves, rotations, and whether a trailing AUF is required.
 - Sampling strategy and subsets beyond PLL.
-- A move simulator for grading. The facelet conventions here are what it must match.
-  Its first test should apply known LL algorithms to a solved cube and check that
-  the results land in this space with the expected facelet strings; the facelet
-  layout in §3 has not yet been checked against a move simulator.
+- The problem set built on this space is in [PROBLEMS.md](PROBLEMS.md), with a move
+  simulator (`spec/pll_problems.py`). Its self-test applies known LL algorithms to a solved cube
+  and confirms every PLL state is reached with the facelet strings of §3, so the layout is checked.
